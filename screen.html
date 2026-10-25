@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDA 管理柜 · 状态大屏</title>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1420;color:#eee;margin:0;padding:20px}
+h1{font-size:26px;margin:0 0 4px}#clock{color:#8a93a6;font-size:14px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.cell{border-radius:12px;padding:16px 12px;text-align:center;background:#1a2233}
+.cell .no{font-size:15px;color:#8a93a6}.cell .pda{font-size:20px;font-weight:700;margin:6px 0}
+.cell .st{font-size:14px;margin-top:6px;line-height:1.5}
+.idle{border:2px solid #1f9d55}.idle .st{color:#4ade80}
+.borrowed{border:2px solid #c02020}.borrowed .st{color:#ff8a8a}
+.unlocking_borrow,.unlocking_return{border:2px solid #d99a00}.unlocking_borrow .st,.unlocking_return .st{color:#ffd166}
+.alert{margin-top:8px;font-size:13px;color:#ff5c5c;font-weight:700}
+#legend{margin-top:18px;color:#8a93a6;font-size:13px}
+@media (max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<h1>📦 PDA 智能管理柜</h1>
+<div id="clock">连接中…</div>
+<div class="grid" id="grid"></div>
+<div id="legend">🟩 在位可借 &nbsp; 🟥 已借出（显示借用人+时间） &nbsp; 🟨 开锁处理中 &nbsp; ⚠️ 红色闪烁=异常（门超时未关等）</div>
+<script>
+const NAMES = {idle:'在位·可借', unlocking_borrow:'开锁中…', borrowed:'已借出', unlocking_return:'开锁中…'};
+function render(boxes, time) {
+  document.getElementById('clock').textContent = '更新时间：' + time;
+  const g = document.getElementById('grid');
+  g.innerHTML = boxes.map(b => `
+    <div class="cell ${b.state}">
+      <div class="no">${b.id} 号格</div>
+      <div class="pda">${b.pda_no}</div>
+      <div class="st">${NAMES[b.state] || b.state}${
+        b.state === 'borrowed' ? `<br>${b.borrower}<br>${b.borrow_time}` : ''}${
+        b.state.startsWith('unlocking') && b.borrower ? `<br>${b.borrower}` : ''}</div>
+      ${b.alert ? `<div class="alert">⚠️ ${b.alert === 'door_timeout' ? '门超时未关' : b.alert}</div>` : ''}
+    </div>`).join('');
+}
+async function load() {
+  try {
+    const j = await (await fetch('/api/status')).json();
+    render(j.boxes, j.time);
+  } catch(e) { document.getElementById('clock').textContent = '连接中断，重试中…'; }
+}
+// SSE 实时推送 + 兜底轮询
+try {
+  const es = new EventSource('/api/events');
+  es.onmessage = e => { const j = JSON.parse(e.data); render(j.boxes, j.time); };
+  es.onerror = () => { es.close(); setInterval(load, 5000); };
+} catch(e) { setInterval(load, 5000); }
+load();
+</script>
+</body>
+</html>

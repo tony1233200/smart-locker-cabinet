@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{BOX_ID}} 号格 · PDA 管理柜</title>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:480px;margin:0 auto;padding:24px 16px;background:#f5f6f8;color:#222}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px}
+h1{font-size:22px;margin:0 0 8px}
+.meta{color:#666;font-size:14px;line-height:1.8}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:13px;margin-left:8px}
+.idle{background:#e6f7e6;color:#1a7f1a}.borrowed{background:#fde8e8;color:#c02020}
+.unlocking_borrow,.unlocking_return{background:#fff3d6;color:#a86a00}
+input{width:100%;box-sizing:border-box;padding:12px;margin:6px 0;border:1px solid #ddd;border-radius:8px;font-size:16px}
+button{width:100%;padding:14px;margin-top:10px;border:0;border-radius:10px;font-size:17px;color:#fff;background:#1677ff}
+button.return{background:#00b578}
+button:disabled{background:#ccc}
+#msg{margin-top:12px;font-size:15px;line-height:1.6}
+.ok{color:#1a7f1a}.err{color:#c02020}
+.hint{font-size:13px;color:#888;margin-top:16px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>{{BOX_ID}} 号格 <span class="badge {{STATE}}" id="stateBadge"></span></h1>
+  <div class="meta">
+    PDA 编号：{{PDA_NO}}<br>
+    <span id="borrowInfo"></span>
+  </div>
+</div>
+<div class="card">
+  <div id="who">
+    <input id="empName" placeholder="姓名" value="{{FEISHU_NAME}}">
+    <input id="empId" placeholder="工号（飞书免登失败时手工填写）" value="{{FEISHU_EMP}}">
+  </div>
+  <button id="btnBorrow">借出</button>
+  <button id="btnReturn" class="return">归还</button>
+  <div id="msg"></div>
+</div>
+<div class="hint">
+  · 飞书扫码打开本页即自动识别身份（当前：<span id="fsState"></span>）<br>
+  · 点借出/归还后格口弹开，取/放后请关好门<br>
+  · 开门超过 2 分钟未关，柜子会鸣叫提醒
+</div>
+<script>
+const BOX = {{BOX_ID}}, STATE = "{{STATE}}";
+const BORROWER = "{{BORROWER}}", BORROW_TIME = "{{BORROW_TIME}}";
+const FS_OK = "{{FEISHU_OK}}" === "1";
+document.getElementById('stateBadge').textContent =
+  {idle:'在位·可借', unlocking_borrow:'开锁中…', borrowed:'已借出', unlocking_return:'开锁中…'}[STATE] || STATE;
+document.getElementById('borrowInfo').innerHTML =
+  STATE === 'borrowed' ? `借用人：${BORROWER}<br>借出时间：${BORROW_TIME}` : '当前在位，可直接借用';
+document.getElementById('fsState').textContent = FS_OK ? '已识别' : '未识别，请手工填写';
+if (FS_OK) document.getElementById('who').style.display = 'none';
+document.getElementById('btnBorrow').style.display = STATE === 'idle' ? '' : 'none';
+document.getElementById('btnReturn').style.display = STATE === 'borrowed' ? '' : 'none';
+if (!['idle','borrowed'].includes(STATE)) {
+  document.getElementById('msg').innerHTML = '<span class="err">该格正在处理中（开锁/等待关门），请稍候再试。</span>';
+}
+async function act(kind) {
+  const name = document.getElementById('empName').value.trim();
+  const emp = document.getElementById('empId').value.trim();
+  if (!name) { document.getElementById('msg').innerHTML = '<span class="err">请填写姓名</span>'; return; }
+  const btn = kind === 'borrow' ? document.getElementById('btnBorrow') : document.getElementById('btnReturn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/' + kind, {method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({box: BOX, user: name, emp_id: emp})});
+    const j = await r.json();
+    document.getElementById('msg').innerHTML =
+      `<span class="${j.ok ? 'ok' : 'err'}">${j.msg}</span>`;
+    if (j.ok) setTimeout(() => location.reload(), 4000);
+  } catch(e) {
+    document.getElementById('msg').innerHTML = '<span class="err">网络异常，请重试</span>';
+  }
+  btn.disabled = false;
+}
+document.getElementById('btnBorrow').onclick = () => act('borrow');
+document.getElementById('btnReturn').onclick = () => act('return');
+</script>
+</body>
+</html>
