@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <title>Smart Locker Cabinet - Symbol (mono)</title>
+  <rect x="36" y="36" width="168" height="168" rx="22" fill="#111111"/>
+  <rect x="56" y="56" width="60" height="60" rx="9" fill="#3D3D3D"/>
+  <rect x="124" y="56" width="60" height="60" rx="9" fill="#3D3D3D"/>
+  <rect x="56" y="124" width="60" height="60" rx="9" fill="#3D3D3D"/>
+  <circle cx="104" cy="86" r="5" fill="#BFBFBF"/>
+  <circle cx="172" cy="86" r="5" fill="#BFBFBF"/>
+  <circle cx="104" cy="154" r="5" fill="#BFBFBF"/>
+  <rect x="124" y="124" width="60" height="60" rx="9" fill="#111111" stroke="#FFFFFF" stroke-width="4"/>
+  <path d="M140 154 l10 10 l20 -22" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

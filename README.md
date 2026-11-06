@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo-lockup.svg" width="480" alt="Smart Locker Cabinet logo">
+</p>
+
 # Smart Locker Cabinet · 智能借还柜
 
 一台自助借还柜的服务端：员工扫描格口二维码借/还手持终端（PDA），柜面大屏实时显示每个格口的状态，ESP32 主控通过 HTTP 轮询驱动电控锁。**零第三方依赖**——纯 Python 标准库 + SQLite，`python3 server.py` 即可运行。
